@@ -93,10 +93,10 @@ const stats = [
 export default function Home() {
   return (
     <div className="min-h-screen flex-1 bg-slate-50">
-      <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8 lg:px-10">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
         {/* 1. 標題與說明 */}
-        <header className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+        <header className="mb-6 sm:mb-8">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
             資產盤點小幫手
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
@@ -106,9 +106,9 @@ export default function Home() {
         </header>
 
         {/* 2. 上傳檔案區塊（僅外觀） */}
-        <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:mb-8 sm:p-6">
           <h2 className="text-sm font-semibold text-slate-900">上傳資產清單</h2>
-          <div className="mt-4 flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+          <div className="mt-4 flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center sm:px-6 sm:py-10">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -150,41 +150,79 @@ export default function Home() {
         </section>
 
         {/* 3. 資產清單表格 */}
-        <section className="mb-8 rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+        <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm sm:mb-8">
+          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
             <h2 className="text-sm font-semibold text-slate-900">資產清單</h2>
             <span className="text-xs text-slate-400">共 {assets.length} 筆（範例資料）</span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[840px] text-left text-sm">
+
+          {/* 手機版：卡片式清單 */}
+          <ul className="divide-y divide-slate-100 sm:hidden">
+            {assets.map((asset) => (
+              <li key={asset.erpCode} className="space-y-2.5 px-4 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-medium text-slate-800">{asset.name}</p>
+                  <span
+                    className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[asset.status]}`}
+                  >
+                    {asset.status}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-slate-500">
+                  <span>ERP：{asset.erpCode}</span>
+                  <span>SAP：{asset.sapCode}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${categoryStyles[asset.aiCategory]}`}
+                  >
+                    {asset.aiCategory}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className={`h-full rounded-full ${confidenceColor(asset.confidence)}`}
+                        style={{ width: `${asset.confidence}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-slate-500">{asset.confidence}%</span>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* 平板／桌機版：完整表格 */}
+          <div className="hidden overflow-x-auto sm:block">
+            <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
-                  <th className="px-6 py-3 font-medium">資產代碼(ERP)</th>
-                  <th className="px-6 py-3 font-medium">資產代碼(SAP)</th>
-                  <th className="px-6 py-3 font-medium">資產名稱</th>
-                  <th className="px-6 py-3 font-medium">AI 分類結果</th>
-                  <th className="px-6 py-3 font-medium">信心分數</th>
-                  <th className="px-6 py-3 font-medium">盤點狀態</th>
+                  <th className="px-4 py-3 font-medium lg:px-6">資產代碼(ERP)</th>
+                  <th className="px-4 py-3 font-medium lg:px-6">資產代碼(SAP)</th>
+                  <th className="px-4 py-3 font-medium lg:px-6">資產名稱</th>
+                  <th className="px-4 py-3 font-medium lg:px-6">AI 分類結果</th>
+                  <th className="px-4 py-3 font-medium lg:px-6">信心分數</th>
+                  <th className="px-4 py-3 font-medium lg:px-6">盤點狀態</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {assets.map((asset) => (
                   <tr key={asset.erpCode} className="hover:bg-slate-50">
-                    <td className="whitespace-nowrap px-6 py-3.5 font-mono text-xs text-slate-600">
+                    <td className="whitespace-nowrap px-4 py-3.5 font-mono text-xs text-slate-600 lg:px-6">
                       {asset.erpCode}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-3.5 font-mono text-xs text-slate-600">
+                    <td className="whitespace-nowrap px-4 py-3.5 font-mono text-xs text-slate-600 lg:px-6">
                       {asset.sapCode}
                     </td>
-                    <td className="px-6 py-3.5 text-slate-800">{asset.name}</td>
-                    <td className="whitespace-nowrap px-6 py-3.5">
+                    <td className="px-4 py-3.5 text-slate-800 lg:px-6">{asset.name}</td>
+                    <td className="whitespace-nowrap px-4 py-3.5 lg:px-6">
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${categoryStyles[asset.aiCategory]}`}
                       >
                         {asset.aiCategory}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-6 py-3.5">
+                    <td className="whitespace-nowrap px-4 py-3.5 lg:px-6">
                       <div className="flex items-center gap-2">
                         <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
                           <div
@@ -195,7 +233,7 @@ export default function Home() {
                         <span className="text-xs text-slate-500">{asset.confidence}%</span>
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-6 py-3.5">
+                    <td className="whitespace-nowrap px-4 py-3.5 lg:px-6">
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[asset.status]}`}
                       >
@@ -210,14 +248,14 @@ export default function Home() {
         </section>
 
         {/* 4. 統計卡片區 */}
-        <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
             >
               <p className="text-xs text-slate-400">{stat.label}</p>
-              <p className="mt-1.5 text-2xl font-semibold text-slate-900">
+              <p className="mt-1.5 text-xl font-semibold text-slate-900 sm:text-2xl">
                 {stat.value}
                 <span className="ml-1 text-sm font-normal text-slate-400">筆</span>
               </p>
