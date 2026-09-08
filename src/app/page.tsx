@@ -1,69 +1,230 @@
-import Image from "next/image";
+type AssetCategory = "軟體" | "第三方資訊服務" | "皆非";
+type ReviewStatus = "已確認" | "待人工確認" | "已駁回";
+
+type Asset = {
+  erpCode: string;
+  sapCode: string;
+  name: string;
+  aiCategory: AssetCategory;
+  confidence: number;
+  status: ReviewStatus;
+};
+
+const assets: Asset[] = [
+  {
+    erpCode: "ERP-00123",
+    sapCode: "SAP-A1023",
+    name: "Microsoft Office 365 企業版授權",
+    aiCategory: "軟體",
+    confidence: 96,
+    status: "已確認",
+  },
+  {
+    erpCode: "ERP-00124",
+    sapCode: "SAP-A1024",
+    name: "AWS 雲端運算服務",
+    aiCategory: "第三方資訊服務",
+    confidence: 91,
+    status: "已確認",
+  },
+  {
+    erpCode: "ERP-00125",
+    sapCode: "SAP-A1025",
+    name: "辦公室多功能事務機",
+    aiCategory: "皆非",
+    confidence: 88,
+    status: "已確認",
+  },
+  {
+    erpCode: "ERP-00126",
+    sapCode: "SAP-A1026",
+    name: "Adobe Creative Cloud 授權",
+    aiCategory: "軟體",
+    confidence: 73,
+    status: "待人工確認",
+  },
+  {
+    erpCode: "ERP-00127",
+    sapCode: "SAP-A1027",
+    name: "資安顧問服務合約",
+    aiCategory: "第三方資訊服務",
+    confidence: 65,
+    status: "待人工確認",
+  },
+];
+
+const categoryStyles: Record<AssetCategory, string> = {
+  軟體: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200",
+  第三方資訊服務: "bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-200",
+  皆非: "bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200",
+};
+
+const statusStyles: Record<ReviewStatus, string> = {
+  已確認: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+  待人工確認: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
+  已駁回: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200",
+};
+
+function confidenceColor(score: number) {
+  if (score >= 90) return "bg-emerald-500";
+  if (score >= 70) return "bg-amber-500";
+  return "bg-red-500";
+}
+
+const stats = [
+  {
+    label: "軟體",
+    value: assets.filter((a) => a.aiCategory === "軟體").length,
+  },
+  {
+    label: "第三方資訊服務",
+    value: assets.filter((a) => a.aiCategory === "第三方資訊服務").length,
+  },
+  {
+    label: "皆非",
+    value: assets.filter((a) => a.aiCategory === "皆非").length,
+  },
+  {
+    label: "待人工確認",
+    value: assets.filter((a) => a.status === "待人工確認").length,
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="min-h-screen flex-1 bg-slate-50">
+      <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8 lg:px-10">
+        {/* 1. 標題與說明 */}
+        <header className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            資產盤點小幫手
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            上傳資產清單後，系統將自動比對 ERP 與 SAP
+            資產代碼，並透過 AI 判斷資產類型（軟體／第三方資訊服務／皆非），協助加速盤點作業。
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        </header>
+
+        {/* 2. 上傳檔案區塊（僅外觀） */}
+        <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-900">上傳資產清單</h2>
+          <div className="mt-4 flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              className="h-9 w-9 text-slate-400"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 8.25 12 3.75m0 0L7.5 8.25M12 3.75v12"
+              />
+            </svg>
+            <div>
+              <p className="text-sm text-slate-600">
+                將檔案拖曳至此，或
+                <button
+                  type="button"
+                  disabled
+                  className="mx-1 font-medium text-blue-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-blue-400"
+                >
+                  點擊選擇檔案
+                </button>
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                支援 .xlsx、.csv 格式，單檔最大 10MB
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled
+              className="mt-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white opacity-40 cursor-not-allowed"
+            >
+              上傳並開始比對
+            </button>
+            <p className="text-xs text-slate-400">上傳功能尚未開放，敬請期待</p>
+          </div>
+        </section>
+
+        {/* 3. 資產清單表格 */}
+        <section className="mb-8 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+            <h2 className="text-sm font-semibold text-slate-900">資產清單</h2>
+            <span className="text-xs text-slate-400">共 {assets.length} 筆（範例資料）</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[840px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
+                  <th className="px-6 py-3 font-medium">資產代碼(ERP)</th>
+                  <th className="px-6 py-3 font-medium">資產代碼(SAP)</th>
+                  <th className="px-6 py-3 font-medium">資產名稱</th>
+                  <th className="px-6 py-3 font-medium">AI 分類結果</th>
+                  <th className="px-6 py-3 font-medium">信心分數</th>
+                  <th className="px-6 py-3 font-medium">盤點狀態</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {assets.map((asset) => (
+                  <tr key={asset.erpCode} className="hover:bg-slate-50">
+                    <td className="whitespace-nowrap px-6 py-3.5 font-mono text-xs text-slate-600">
+                      {asset.erpCode}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-3.5 font-mono text-xs text-slate-600">
+                      {asset.sapCode}
+                    </td>
+                    <td className="px-6 py-3.5 text-slate-800">{asset.name}</td>
+                    <td className="whitespace-nowrap px-6 py-3.5">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${categoryStyles[asset.aiCategory]}`}
+                      >
+                        {asset.aiCategory}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className={`h-full rounded-full ${confidenceColor(asset.confidence)}`}
+                            style={{ width: `${asset.confidence}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-slate-500">{asset.confidence}%</span>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-3.5">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[asset.status]}`}
+                      >
+                        {asset.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* 4. 統計卡片區 */}
+        <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
+              <p className="text-xs text-slate-400">{stat.label}</p>
+              <p className="mt-1.5 text-2xl font-semibold text-slate-900">
+                {stat.value}
+                <span className="ml-1 text-sm font-normal text-slate-400">筆</span>
+              </p>
+            </div>
+          ))}
+        </section>
+      </div>
     </div>
   );
 }
