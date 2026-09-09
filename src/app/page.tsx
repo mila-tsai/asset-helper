@@ -1,16 +1,9 @@
-type AssetCategory = "軟體" | "第三方資訊服務" | "皆非";
-type ReviewStatus = "已確認" | "待人工確認" | "已駁回";
+"use client";
 
-type Asset = {
-  erpCode: string;
-  sapCode: string;
-  name: string;
-  aiCategory: AssetCategory;
-  confidence: number;
-  status: ReviewStatus;
-};
+import { useRef, useState } from "react";
+import type { Asset, AssetCategory, ReviewStatus } from "@/types/asset";
 
-const assets: Asset[] = [
+const mockAssets: Asset[] = [
   {
     erpCode: "ERP-00123",
     sapCode: "SAP-A1023",
@@ -71,26 +64,109 @@ function confidenceColor(score: number) {
   return "bg-red-500";
 }
 
-const stats = [
-  {
-    label: "軟體",
-    value: assets.filter((a) => a.aiCategory === "軟體").length,
-  },
-  {
-    label: "第三方資訊服務",
-    value: assets.filter((a) => a.aiCategory === "第三方資訊服務").length,
-  },
-  {
-    label: "皆非",
-    value: assets.filter((a) => a.aiCategory === "皆非").length,
-  },
-  {
-    label: "待人工確認",
-    value: assets.filter((a) => a.status === "待人工確認").length,
-  },
-];
+type UploadStatus = "idle" | "uploading" | "success" | "error";
 
 export default function Home() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [assets, setAssets] = useState<Asset[]>(mockAssets);
+  const [isSampleData, setIsSampleData] = useState(true);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
+  const [message, setMessage] = useState<string | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  const stats = [
+    {
+      label: "軟體",
+      value: assets.filter((a) => a.aiCategory === "軟體").length,
+    },
+    {
+      label: "第三方資訊服務",
+      value: assets.filter((a) => a.aiCategory === "第三方資訊服務").length,
+    },
+    {
+      label: "皆非",
+      value: assets.filter((a) => a.aiCategory === "皆非").length,
+    },
+    {
+      label: "待人工確認",
+      value: assets.filter((a) => a.status === "待人工確認").length,
+    },
+  ];
+
+  function stageFile(file: File | null | undefined) {
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".xlsx")) {
+      setUploadStatus("error");
+      setMessage("檔案格式錯誤，請上傳 .xlsx 格式的 Excel 檔案。");
+      setPendingFile(null);
+      return;
+    }
+
+    setPendingFile(file);
+    setUploadStatus("idle");
+    setMessage(null);
+  }
+
+  function handleFileInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    stageFile(event.target.files?.[0]);
+    event.target.value = "";
+  }
+
+  function handleDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDraggingOver(false);
+    stageFile(event.dataTransfer.files?.[0]);
+  }
+
+  function handleDragOver(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDraggingOver(true);
+  }
+
+  function handleDragLeave(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDraggingOver(false);
+  }
+
+  async function handleUpload() {
+    if (!pendingFile) return;
+
+    setUploadStatus("uploading");
+    setMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", pendingFile);
+
+      const response = await fetch("/api/upload-inventory", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result) {
+        setUploadStatus("error");
+        setMessage(result?.error ?? "上傳失敗，請稍後再試。");
+        return;
+      }
+
+      setAssets(result.data as Asset[]);
+      setIsSampleData(false);
+      setUploadStatus("success");
+      setMessage(`已成功上傳，共 ${result.total} 筆資料。`);
+      setPendingFile(null);
+    } catch {
+      setUploadStatus("error");
+      setMessage("網路連線發生問題，請稍後再試。");
+    }
+  }
+
+  const isUploading = uploadStatus === "uploading";
+
   return (
     <div className="min-h-screen flex-1 bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
@@ -105,10 +181,19 @@ export default function Home() {
           </p>
         </header>
 
-        {/* 2. 上傳檔案區塊（僅外觀） */}
+        {/* 2. 上傳檔案區塊 */}
         <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:mb-8 sm:p-6">
           <h2 className="text-sm font-semibold text-slate-900">上傳資產清單</h2>
-          <div className="mt-4 flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center sm:px-6 sm:py-10">
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            className={`mt-4 flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-4 py-8 text-center sm:px-6 sm:py-10 ${
+              isDraggingOver
+                ? "border-blue-400 bg-blue-50"
+                : "border-slate-300 bg-slate-50"
+            }`}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -128,24 +213,50 @@ export default function Home() {
                 將檔案拖曳至此，或
                 <button
                   type="button"
-                  disabled
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
                   className="mx-1 font-medium text-blue-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-blue-400"
                 >
                   點擊選擇檔案
                 </button>
               </p>
               <p className="mt-1 text-xs text-slate-400">
-                支援 .xlsx、.csv 格式，單檔最大 10MB
+                支援 .xlsx 格式，單檔最大 10MB
               </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx"
+                onChange={handleFileInputChange}
+                className="hidden"
+              />
             </div>
             <button
               type="button"
-              disabled
-              className="mt-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white opacity-40 cursor-not-allowed"
+              onClick={handleUpload}
+              disabled={!pendingFile || isUploading}
+              className="mt-2 inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
-              上傳並開始比對
+              {isUploading && (
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              )}
+              {isUploading ? "上傳中…" : "上傳並開始比對"}
             </button>
-            <p className="text-xs text-slate-400">上傳功能尚未開放，敬請期待</p>
+
+            {uploadStatus === "error" && message && (
+              <p className="text-xs text-red-600">{message}</p>
+            )}
+            {uploadStatus === "success" && message && (
+              <p className="text-xs text-emerald-600">{message}</p>
+            )}
+            {uploadStatus === "idle" && pendingFile && (
+              <p className="text-xs text-slate-400">
+                已選擇檔案：{pendingFile.name}，請點擊「上傳並開始比對」
+              </p>
+            )}
+            {uploadStatus === "idle" && !pendingFile && (
+              <p className="text-xs text-slate-400">尚未選擇檔案</p>
+            )}
           </div>
         </section>
 
@@ -153,13 +264,15 @@ export default function Home() {
         <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm sm:mb-8">
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
             <h2 className="text-sm font-semibold text-slate-900">資產清單</h2>
-            <span className="text-xs text-slate-400">共 {assets.length} 筆（範例資料）</span>
+            <span className="text-xs text-slate-400">
+              共 {assets.length} 筆{isSampleData ? "（範例資料）" : ""}
+            </span>
           </div>
 
           {/* 手機版：卡片式清單 */}
           <ul className="divide-y divide-slate-100 sm:hidden">
-            {assets.map((asset) => (
-              <li key={asset.erpCode} className="space-y-2.5 px-4 py-4">
+            {assets.map((asset, index) => (
+              <li key={`${asset.erpCode}-${index}`} className="space-y-2.5 px-4 py-4">
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-sm font-medium text-slate-800">{asset.name}</p>
                   <span
@@ -206,8 +319,8 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {assets.map((asset) => (
-                  <tr key={asset.erpCode} className="hover:bg-slate-50">
+                {assets.map((asset, index) => (
+                  <tr key={`${asset.erpCode}-${index}`} className="hover:bg-slate-50">
                     <td className="whitespace-nowrap px-4 py-3.5 font-mono text-xs text-slate-600 lg:px-6">
                       {asset.erpCode}
                     </td>
